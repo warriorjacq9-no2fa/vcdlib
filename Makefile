@@ -3,10 +3,10 @@ run: build
 	bin/vcd
 
 build:
-	mkdir bin
+	mkdir -p bin
 	flex vcd_lexer.l
-	bison vcd.y
-	gcc vcd.tab.c vcd.yy.c -o bin/vcd
+	bison -d vcd.y
+	gcc vcd.tab.c lex.yy.c -o bin/vcd
 
 clean:
 	rm -rf bin *.tab.c *.yy.c
