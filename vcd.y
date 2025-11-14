@@ -19,7 +19,14 @@ var_t newvar(var_type_t type, char *name, char *id, int width)
     v.id = id;
     v.width = width;
     printf("New var: %s %s[%d] '%s'\n", vtype_lt[type], name, width, id);
-    hobj
+    Object *vo = hobjNew(3,
+        hobjVal(TYPE_STRING, "name", name),
+        hobjVal(TYPE_INT, "type", type),
+        hobjVal(TYPE_INT, "width", width)
+    );
+    hobjAppend(root,
+        hobjVal(TYPE_OBJECT, id, vo)
+    );
     return v;
 }
 %}
