@@ -4,6 +4,8 @@
 void yyerror(const char* s);
 int yylex();
 
+extern int yylineno;
+
 var_t newvar(var_type_t type, char *name, char *id, int width)
 {
     var_t v;
@@ -24,13 +26,13 @@ var_t newvar(var_type_t type, char *name, char *id, int width)
     char ch;
 }
 
-%token <str> STRING
+%token <str> TOK_ID
 %token <num> NUMBER
 %token TOK_TS TOK_DATE TOK_VER TOK_SCOPE
 %token TOK_UPSCOPE TOK_VAR TOK_ENDDEFS TOK_DEFS
 %token TOK_COMMENT TOK_TIMEUNIT TOK_BITS TOK_END
 %token <num> TOK_TIME
-%token <str> TOK_BVEC TOK_SCALAR TOK_ID
+%token <str> TOK_BVEC TOK_SCALAR
 %token TOK_DUMPALL TOK_DUMPOFF TOK_DUMPON
 %token TOK_DUMPVARS TOK_BIT
 %token <vtype> T_EVENT T_INTEGER T_PARAMETER T_REAL T_REG
@@ -87,9 +89,9 @@ dumps:
 ;
 
 var_ref:
-      STRING
-    | STRING TOK_BIT
-    | STRING TOK_BITS
+      TOK_ID
+    | TOK_ID TOK_BIT
+    | TOK_ID TOK_BITS
 ;
 
 var:
@@ -137,5 +139,5 @@ void main(void) {
     yyparse();
 }
 void yyerror(const char* s) {
-    printf("%s\n", s);
+    printf("Error: %s on line %d\n", s, yylineno);
 }
