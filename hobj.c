@@ -124,7 +124,8 @@ void hobjFree(Object *o, const char* key) {
         hobjFreeAll(kv->value.o_val);
 }
 
-void hobjAppend(Object *o, const char* key, KeyValue *kv) {
+void hobjAppend(Object *o, KeyValue *kv) {
     o->count += 1;
     o->items[o->count] = *kv;
+    free(kv);
 }
