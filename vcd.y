@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include "types.h"
 void yyerror(const char* s);
-int yylex(void);
+int yylex();
 
-var_t newvar(char *type, char *name, char *id, int width)
+var_t newvar(var_type_t type, char *name, char *id, int width)
 {
     var_t v;
     v.type = type;
@@ -12,7 +12,7 @@ var_t newvar(char *type, char *name, char *id, int width)
     v.id = id;
     v.width = width;
     return v;
-    printf("New var: %s %s %s %d", type, name, id, width);
+    printf("New var: %d %s %s %d", type, name, id, width);
 }
 %}
 
@@ -20,6 +20,7 @@ var_t newvar(char *type, char *name, char *id, int width)
     char *str;
     int num;
     var_t v;
+    var_type_t vtype;
     char ch;
 }
 
@@ -28,20 +29,17 @@ var_t newvar(char *type, char *name, char *id, int width)
 %token TOK_TS TOK_DATE TOK_VER TOK_SCOPE
 %token TOK_UPSCOPE TOK_VAR TOK_ENDDEFS TOK_DEFS
 %token TOK_COMMENT TOK_TIMEUNIT TOK_BITS TOK_END
-%token TOK_TIME TOK_BVEC TOK_SCALAR TOK_ID
+%token <num> TOK_TIME
+%token <str> TOK_BVEC TOK_SCALAR TOK_ID
 %token TOK_DUMPALL TOK_DUMPOFF TOK_DUMPON
 %token TOK_DUMPVARS TOK_BIT
-%token event integer parameter real reg
-%token supply0 supply1 tri triand trior trireg
-%token tri0 tri1 wand wire wor
+%token <vtype> T_EVENT T_INTEGER T_PARAMETER T_REAL T_REG
+%token <vtype> T_SUPPLY0 T_SUPPLY1 T_TRI T_TRIAND T_TRIOR T_TRIREG
+%token <vtype> T_TRI0 T_TRI1 T_WAND T_WIRE T_WOR
 %token module task function begin_ fork_
-%type <str> supply0 supply1 tri triand trior trireg
-%type <str> tri0 tri1 wand wire wor
-%type <str> module task function begin_ fork
-%type <num> TOK_TIME
-%type <str> TOK_BVEC TOK_SCALAR TOK_ID
 %type <v> var
-%type <str> var_type var_ref
+%type <str> var_ref
+%type <vtype> var_type
 %%
 
 file:
@@ -96,27 +94,27 @@ var_ref:
 
 var:
     var_type NUMBER TOK_ID var_ref {
-            $$ = newvar($1, $2, $3, $4);
+            $$ = newvar($1, $4, $3, $2);
         }
 ;
 
 var_type:
-      event
-    | integer
-    | parameter
-    | real
-    | reg
-    | supply0
-    | supply1
-    | tri
-    | triand
-    | trior
-    | trireg
-    | tri0
-    | tri1
-    | wand
-    | wire
-    | wor
+      T_EVENT
+    | T_INTEGER
+    | T_PARAMETER
+    | T_REAL
+    | T_REG
+    | T_SUPPLY0
+    | T_SUPPLY1
+    | T_TRI
+    | T_TRIAND
+    | T_TRIOR
+    | T_TRIREG
+    | T_TRI0
+    | T_TRI1
+    | T_WAND
+    | T_WIRE
+    | T_WOR
 ;
 
 timescale:
@@ -135,9 +133,9 @@ scope_type:
     | fork_
 ;
 %%
-main() {
+void main(void) {
     yyparse();
 }
-yyerror(char* s) {
+void yyerror(const char* s) {
     printf("%s\n", s);
 }

@@ -1,4 +1,5 @@
 %{
+#include "types.h"
 #include "vcd.tab.h"
 #include <string.h>
 %}
@@ -6,24 +7,22 @@
 %x IB
 
 %%
-event       { return event; }
-integer     { return integer; }
-parameter   { return parameter; }
-real        { return real; }
-reg         { return reg; }
-
-supply0     { return supply0; }
-supply1     { return supply1; }
-tri         { return tri; }
-triand      { return triand; }
-trior       { return trior; }
-trireg      { return trireg; }
-
-tri0        { return tri0; }
-tri1        { return tri1; }
-wand        { return wand; }
-wire        { return wire; }
-wor         { return wor; }
+"event"      { yylval.vtype = VT_EVENT;    return T_EVENT; }
+"integer"    { yylval.vtype = VT_INTEGER;  return T_INTEGER; }
+"parameter"  { yylval.vtype = VT_PARAMETER; return T_PARAMETER; }
+"real"  { yylval.vtype = VT_REAL; return T_REAL; }
+"reg"  { yylval.vtype = VT_REG; return T_REG; }
+"supply0"  { yylval.vtype = VT_SUPPLY0; return T_SUPPLY0; }
+"supply1"  { yylval.vtype = VT_SUPPLY1; return T_SUPPLY1; }
+"tri"  { yylval.vtype = VT_TRI; return T_TRI; }
+"triand"  { yylval.vtype = VT_TRIAND; return T_TRIAND; }
+"trior"  { yylval.vtype = VT_TRIOR; return T_TRIOR; }
+"trireg"  { yylval.vtype = VT_TRIREG; return T_TRIREG; }
+"tri0"  { yylval.vtype = VT_TRI0; return T_TRI0; }
+"tri1"  { yylval.vtype = VT_TRI1; return T_TRI1; }
+"wand"  { yylval.vtype = VT_WAND; return T_WAND; }
+"wire"  { yylval.vtype = VT_WIRE; return T_WIRE; }
+"wor"  { yylval.vtype = VT_WOR; return T_WOR; }
 
 module      { return module; }
 task        { return task; }
