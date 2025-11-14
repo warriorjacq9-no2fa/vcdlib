@@ -20,6 +20,16 @@ typedef enum {
     VT_WOR
 } var_type_t;
 
+extern const char* vtype_lt[];
+
+typedef enum {
+    ST_MODULE,
+    ST_TASK,
+    ST_FUNCTION,
+    ST_BEGIN,
+    ST_FORK
+} scope_type_t;
+
 typedef struct {
     var_type_t type;
     char *name;
