@@ -9,4 +9,4 @@ build:
 	gcc hobj.c types.c vcd.tab.c lex.yy.c -o bin/vcd
 
 clean:
-	rm -rf bin *.tab.c *.yy.c
+	rm -rf bin *.tab.c *.yy.c *.tab.h *.output
