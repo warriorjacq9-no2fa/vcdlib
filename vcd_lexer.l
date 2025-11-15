@@ -33,6 +33,7 @@
 "begin"             { yylval.stype = ST_BEGIN; return S_BEGIN;      }
 "fork"              { yylval.stype = ST_FORK; return S_FORK;        }
 
+<VAR_BODY>"\$comment" { yy_push_state(IGNORE); return TOK_BODYCOMMENT; }
 "\$comment"         { yy_push_state(IGNORE); return TOK_COMMENT;    }
 "\$date"            { yy_push_state(IGNORE); return TOK_DATE;       }
 "\$version"         { yy_push_state(IGNORE); return TOK_VER;        }
@@ -41,7 +42,6 @@
 "\$upscope"         { return TOK_UPSCOPE;   }
 "\$var"             { return TOK_VAR;       }
 "\$enddefinitions"  { return TOK_ENDDEFS;   }
-"\$definitions"     { return TOK_DEFS;      }
 "\$dumpall"         { return TOK_DUMPALL;   }
 "\$dumpoff"         { return TOK_DUMPOFF;   }
 "\$dumpon"          { return TOK_DUMPON;    }
@@ -53,7 +53,7 @@
 <VAR_BODY>#[0-9]+       { yylval.num = atoi(yytext + 1); return TOK_TIME;   }
 <VAR_BODY>[bB][01xXzZ]+ { yylval.str = strdup(yytext); return TOK_BVEC;     }
 <VAR_BODY>[01xXzZ]      { yylval.ch = yytext[0]; return TOK_SCALAR;         }
-\[[0-9]+\]          { yylval.num = atoi(yytext + 1); return TOK_BIT;    }
+\[[0-9]+\]          { return TOK_BIT;                                   }
 \[[0-9]+:[0-9]+\]   { return TOK_BITS;                                  }
 [0-9]+([munpf]?s)   { yylval.num = atoi(yytext); return TOK_TIMEUNIT;   }
 [0-9]+              { yylval.num = atoi(yytext); return NUMBER;         }

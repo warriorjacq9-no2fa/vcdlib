@@ -9,7 +9,8 @@ int yylex();
 extern int yylineno;
 extern void set_state(int);
 
-Object* root;
+Object* o_vars;
+Object* o_data;
 
 var_t newvar(var_type_t type, char *name, char *id, int width)
 {
@@ -18,13 +19,12 @@ var_t newvar(var_type_t type, char *name, char *id, int width)
     v.name = name;
     v.id = id;
     v.width = width;
-    printf("New var: %s %s[%d] '%s'\n", vtype_lt[type], name, width, id);
     Object *vo = hobjNew(3,
         hobjVal(TYPE_STRING, "name", name),
-        hobjVal(TYPE_INT, "type", type),
-        hobjVal(TYPE_INT, "width", width)
+        hobjVal(TYPE_INT, "type", &type),
+        hobjVal(TYPE_INT, "width", &width)
     );
-    hobjAppend(root,
+    hobjAppend(o_vars,
         hobjVal(TYPE_OBJECT, id, vo)
     );
     return v;
@@ -41,20 +41,24 @@ var_t newvar(var_type_t type, char *name, char *id, int width)
     char ch;
 }
 
-%token <str> TOK_ID
-%token <num> NUMBER
-%token TOK_TS TOK_DATE TOK_VER TOK_SCOPE
-%token TOK_UPSCOPE TOK_VAR TOK_ENDDEFS TOK_DEFS
-%token TOK_COMMENT TOK_TIMEUNIT TOK_BITS TOK_END
-%token <num> TOK_TIME
-%token <str> TOK_BVEC
+%token <str> TOK_ID TOK_BVEC
+%token <num> NUMBER TOK_TIME
 %token <ch>  TOK_SCALAR
+
+%token TOK_TS TOK_DATE TOK_VER TOK_SCOPE
+%token TOK_UPSCOPE TOK_VAR TOK_ENDDEFS
+%token TOK_COMMENT TOK_BODYCOMMENT
 %token TOK_DUMPALL TOK_DUMPOFF TOK_DUMPON
-%token TOK_DUMPVARS TOK_BIT
+%token TOK_DUMPVARS
+%token TOK_END
+
+%token TOK_TIMEUNIT TOK_BITS TOK_BIT
+
 %token <vtype> T_EVENT T_INTEGER T_PARAMETER T_REAL T_REG
 %token <vtype> T_SUPPLY0 T_SUPPLY1 T_TRI T_TRIAND T_TRIOR T_TRIREG
 %token <vtype> T_TRI0 T_TRI1 T_WAND T_WIRE T_WOR
 %token <stype> S_MODULE S_TASK S_FUNCTION S_BEGIN S_FORK
+
 %type <v> var
 %type <str> var_ref
 %type <vtype> var_type
@@ -70,7 +74,7 @@ body:
 ;
 
 body_line:
-      TOK_COMMENT TOK_END
+      TOK_BODYCOMMENT TOK_END
     | val_change
     | TOK_TIME
     | TOK_DUMPON dumps TOK_END
@@ -82,11 +86,6 @@ body_line:
 header:
       header_line
     | header header_line
-    | header header_end
-;
-
-header_end:
-    TOK_ENDDEFS TOK_END { set_state(2); }
 ;
 
 header_line:
@@ -97,15 +96,15 @@ header_line:
     | TOK_SCOPE scope TOK_END
     | TOK_UPSCOPE TOK_END
     | TOK_VAR var TOK_END
+    | TOK_ENDDEFS TOK_END { set_state(2); }
 ;
 
 val_change:
-      TOK_BVEC TOK_ID { printf("%s = %s\n", $2, $1); }
-    | TOK_SCALAR TOK_ID { printf("%s = %c\n", $2, $1); }
+      TOK_BVEC TOK_ID
+    | TOK_SCALAR TOK_ID
 ;
 
-dumps: // Empty
-    | val_change
+dumps: /* empty */
     | dumps val_change
 ;
 
@@ -153,9 +152,11 @@ scope_type:
 ;
 %%
 void main(void) {
-    root = hobjNew(0);
+    o_vars = hobjNew(0);
+    o_data = hobjNew(0);
     yyparse();
+    hobjPrint(o_vars, "");
 }
 void yyerror(const char* s) {
-    printf("Error: %s on line %d\n", s, yylineno);
+    fprintf(stderr, "Error: %s on line %d\n", s, yylineno);
 }
