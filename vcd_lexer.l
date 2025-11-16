@@ -27,11 +27,11 @@
 "wire"          { yylval.vtype = VT_WIRE; return T_WIRE;            }
 "wor"           { yylval.vtype = VT_WOR; return T_WOR;              }
 
-"module"            { yylval.stype = ST_MODULE; return S_MODULE;    }
-"task"              { yylval.stype = ST_TASK; return S_TASK;        }
-"function"          { yylval.stype = ST_FUNCTION; return S_FUNCTION;}
-"begin"             { yylval.stype = ST_BEGIN; return S_BEGIN;      }
-"fork"              { yylval.stype = ST_FORK; return S_FORK;        }
+"module"        { yylval.stype = ST_MODULE; return S_MODULE;    }
+"task"          { yylval.stype = ST_TASK; return S_TASK;        }
+"function"      { yylval.stype = ST_FUNCTION; return S_FUNCTION;}
+"begin"         { yylval.stype = ST_BEGIN; return S_BEGIN;      }
+"fork"          { yylval.stype = ST_FORK; return S_FORK;        }
 
 <VAR_BODY>"\$comment" { yy_push_state(IGNORE); return TOK_BODYCOMMENT; }
 "\$comment"         { yy_push_state(IGNORE); return TOK_COMMENT;    }
@@ -51,7 +51,7 @@
 
 <IGNORE>.|\n         ;
 <VAR_BODY>#[0-9]+       { yylval.num = atoi(yytext + 1); return TOK_TIME;   }
-<VAR_BODY>[bB][01xXzZ]+ { yylval.str = strdup(yytext); return TOK_BVEC;     }
+<VAR_BODY>[bB][01xXzZ]+ { yylval.str = strdup(yytext + 1); return TOK_BVEC;     }
 <VAR_BODY>[01xXzZ]      { yylval.ch = yytext[0]; return TOK_SCALAR;         }
 \[[0-9]+\]          { return TOK_BIT;                                   }
 \[[0-9]+:[0-9]+\]   { return TOK_BITS;                                  }

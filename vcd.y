@@ -1,16 +1,64 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "types.h"
 #include "hobj.h"
+
+#define VERBOSE
+#define SET_FLAG(f)   (flags |=  (1 << (f)))
+#define CLR_FLAG(f)   (flags &= ~(1 << (f)))
+#define HAS_FLAG(f)   (flags &   (1 << (f)))
+
 void yyerror(const char* s);
 int yylex();
 
 extern int yylineno;
 extern void set_state(int);
 
+// Output objects
 Object* o_vars;
 Object* o_data;
+
+Object* o_tmp;
+int ctime = 0;
+/* Bit  Flag
+ * 0    Inside dumpall
+ * 1    Inside dumpvars
+ * 2    Inside dumpon
+ * 3    Inside dumpoff
+*/
+char flags = 0;
+
+void newscalar(char d, char* id) {
+#ifdef VERBOSE 
+    printf("%s: %c at #%d\n", id, d, ctime);
+#endif
+}
+
+void newdata(char* d, char* id) {
+    // Get the bit width to extend
+    int width = 0;
+    Object* var = (Object*)hobjGet(o_vars, id);
+    if(var != NULL) {
+        int* width_p = (int*)hobjGet(var, "width");
+        if(width_p != NULL) width = *width_p;
+    }
+    char* data = malloc(width + 1);
+    if(strlen(d) < width && width != 0) { // Do we need to extend?
+        char e = (d[0] == '1' ? '0' : d[0]); // Char to extend with
+        int i = 0;
+        for(; i < width - strlen(d); i++) {
+            data[i] = e;
+        }
+        strcat(data + i, d);
+    } else {
+        strcpy(data, d);
+    }
+#ifdef VERBOSE
+    printf("%s: %s at #%d\n", id, data, ctime);
+#endif
+}
 
 var_t newvar(var_type_t type, char *name, char *id, int width)
 {
@@ -76,12 +124,34 @@ body:
 body_line:
       TOK_BODYCOMMENT TOK_END
     | val_change
-    | TOK_TIME
-    | TOK_DUMPON dumps TOK_END
-    | TOK_DUMPOFF dumps TOK_END
-    | TOK_DUMPALL dumps TOK_END
-    | TOK_DUMPVARS dumps TOK_END
+    | TOK_TIME { ctime = $1; }
+    | TOK_DUMPON {
+#ifdef VERBOSE
+        printf("Dumpon\n");
+#endif
+    } dumps dump_end
+    | TOK_DUMPOFF {
+#ifdef VERBOSE
+        printf("Dumpoff\n");
+#endif
+    } dumps dump_end
+    | TOK_DUMPALL {
+#ifdef VERBOSE
+        printf("Dumpall\n");
+#endif
+    } dumps dump_end
+    | TOK_DUMPVARS {
+#ifdef VERBOSE
+        printf("Dumpvars\n");
+#endif
+    } dumps dump_end
 ;
+
+dump_end: TOK_END {
+#ifdef VERBOSE
+    printf("End\n");
+#endif
+    }
 
 header:
       header_line
@@ -100,8 +170,8 @@ header_line:
 ;
 
 val_change:
-      TOK_BVEC TOK_ID
-    | TOK_SCALAR TOK_ID
+      TOK_BVEC TOK_ID { newdata($1, $2); }
+    | TOK_SCALAR TOK_ID { newscalar($1, $2); }
 ;
 
 dumps: /* empty */
@@ -154,8 +224,9 @@ scope_type:
 void main(void) {
     o_vars = hobjNew(0);
     o_data = hobjNew(0);
+    o_tmp = hobjNew(0);
     yyparse();
-    hobjPrint(o_vars, "");
+    //hobjPrint(o_vars, "");
 }
 void yyerror(const char* s) {
     fprintf(stderr, "Error: %s on line %d\n", s, yylineno);
