@@ -5,10 +5,9 @@
 #include "types.h"
 #include "hobj.h"
 
-#define VERBOSE
-#define SET_FLAG(f)   (flags |=  (1 << (f)))
-#define CLR_FLAG(f)   (flags &= ~(1 << (f)))
-#define HAS_FLAG(f)   (flags &   (1 << (f)))
+#define SET_FLAG(f)     (flags |=  (1 << (f)))
+#define CLR_FLAGS()     (flags ^= flags)
+#define HAS_FLAG(f)     (flags &   (1 << (f)))
 
 void yyerror(const char* s);
 int yylex();
@@ -23,16 +22,28 @@ Object* o_data;
 Object* o_tmp;
 int ctime = 0;
 /* Bit  Flag
- * 0    Inside dumpall
- * 1    Inside dumpvars
- * 2    Inside dumpon
- * 3    Inside dumpoff
+ * 0    Inside dumpon   (1)
+ * 1    Inside dumpoff  (2)
+ * 2    Inside dumpall  (4)
+ * 3    Inside dumpvars (8)
 */
 char flags = 0;
 
 void newscalar(char d, char* id) {
+    char data[2];
+    data[0] = d;
+    data[1] = '\0';
+    if(hobjGet(o_tmp, id) != NULL) {
+        hobjSet(o_tmp,
+            hobjVal(TYPE_STRING, id, data)
+        );
+    } else {
+        hobjAppend(o_tmp,
+            hobjVal(TYPE_STRING, id, data)
+        );
+    }
 #ifdef VERBOSE 
-    printf("%s: %c at #%d\n", id, d, ctime);
+    printf("%s: %s at #%d:%d\n", id, data, ctime, flags);
 #endif
 }
 
@@ -51,12 +62,21 @@ void newdata(char* d, char* id) {
         for(; i < width - strlen(d); i++) {
             data[i] = e;
         }
-        strcat(data + i, d);
+        strcpy(data + i, d);
     } else {
         strcpy(data, d);
     }
+    if(hobjGet(o_tmp, id) != NULL) {
+        hobjSet(o_tmp,
+            hobjVal(TYPE_STRING, id, data)
+        );
+    } else {
+        hobjAppend(o_tmp,
+            hobjVal(TYPE_STRING, id, data)
+        );
+    }
 #ifdef VERBOSE
-    printf("%s: %s at #%d\n", id, data, ctime);
+    printf("%s: %s at #%d:%d\n", id, data, ctime, flags);
 #endif
 }
 
@@ -124,23 +144,40 @@ body:
 body_line:
       TOK_BODYCOMMENT TOK_END
     | val_change
-    | TOK_TIME { ctime = $1; }
+    | TOK_TIME {
+        if($1 != ctime) {
+            printf("|    %d: ", ctime);
+            hobjPrint(o_tmp, "|    ");
+            char* s_time = malloc(19 * sizeof(char));
+            snprintf(s_time, 19 * sizeof(char), "%d", ctime);
+            hobjAppend(o_data,
+                hobjVal(TYPE_OBJECT, s_time, o_tmp)
+            );
+            hobjFreeAll(o_tmp);
+            o_tmp = hobjNew(0);
+            ctime = $1;
+        }
+    }
     | TOK_DUMPON {
+        SET_FLAG(0);
 #ifdef VERBOSE
         printf("Dumpon\n");
 #endif
     } dumps dump_end
     | TOK_DUMPOFF {
+        SET_FLAG(1);
 #ifdef VERBOSE
         printf("Dumpoff\n");
 #endif
     } dumps dump_end
     | TOK_DUMPALL {
+        SET_FLAG(2);
 #ifdef VERBOSE
         printf("Dumpall\n");
 #endif
     } dumps dump_end
     | TOK_DUMPVARS {
+        SET_FLAG(3);
 #ifdef VERBOSE
         printf("Dumpvars\n");
 #endif
@@ -149,8 +186,9 @@ body_line:
 
 dump_end: TOK_END {
 #ifdef VERBOSE
-    printf("End\n");
+        printf("End %d\n", flags);
 #endif
+        CLR_FLAGS();
     }
 
 header:
@@ -226,7 +264,6 @@ void main(void) {
     o_data = hobjNew(0);
     o_tmp = hobjNew(0);
     yyparse();
-    //hobjPrint(o_vars, "");
 }
 void yyerror(const char* s) {
     fprintf(stderr, "Error: %s on line %d\n", s, yylineno);

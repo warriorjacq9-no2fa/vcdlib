@@ -83,8 +83,10 @@ ValueType hobjType(Object *o, const char* key) {
 void* hobjGet (Object *o, const char* key) {
     KeyValue* kv = NULL;
     for(int i = 0; i < o->count; i++) {
-        if(!strcmp(o->items[i].key, key))
+        if(!strcmp(o->items[i].key, key)) {
             kv = &o->items[i];
+            break;
+        }
     }
     if(kv == NULL) return NULL;
     switch(kv->type) {
@@ -98,15 +100,43 @@ void* hobjGet (Object *o, const char* key) {
             return kv->value.o_val;
     }
 }
-
+// TODO: VITAL:  Implement hobjClone
 void hobjSet (Object *o, KeyValue *new_kv) {
     KeyValue* kv = NULL;
     for(int i = 0; i < o->count; i++) {
-        if(!strcmp(o->items[i].key, new_kv->key))
+        if(!strcmp(o->items[i].key, new_kv->key)) {
             kv = &o->items[i];
+            break;
+        }
     }
     if(kv == NULL) return;
-    *kv = *new_kv;
+
+    // Free the old key-value
+    free((char*)kv->key);
+    if (kv->type == TYPE_STRING)
+        free(kv->value.s_val);
+    if (kv->type == TYPE_OBJECT)
+        hobjFreeAll(kv->value.o_val);
+
+    // Deep copy the new one
+    kv->key = strdup(new_kv->key);
+    kv->type = new_kv->type;
+    switch(new_kv->type) {
+        case TYPE_INT:
+            kv->value.i_val = new_kv->value.i_val;
+            break;
+        case TYPE_DOUBLE:
+            kv->value.d_val = new_kv->value.d_val;
+            break;
+        case TYPE_STRING:
+            kv->value.s_val = strdup(new_kv->value.s_val);
+            break;
+        case TYPE_OBJECT:
+            kv->value.o_val = hobjClone(new_kv->value.o_val);
+            break;
+    }
+
+    printf("Set %s: %s\n", new_kv->key, new_kv->value.s_val);
     free((char*)new_kv->key);
     if (new_kv->type == TYPE_STRING)
         free(new_kv->value.s_val);

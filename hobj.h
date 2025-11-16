@@ -31,6 +31,7 @@ Object* hobjNew(size_t count, ...);
 KeyValue* hobjVal(ValueType t, const char* key, void* val);
 ValueType hobjType(Object *o, const char* key);
 void* hobjGet(Object *o, const char* key);
+void hobjSet(Object *o, KeyValue* new_kv);
 void hobjFreeAll(Object *o);
 void hobjFree(Object *o, const char* key);
 void hobjAppend(Object *o, KeyValue *kv);
