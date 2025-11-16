@@ -99,6 +99,21 @@ void* hobjGet (Object *o, const char* key) {
     }
 }
 
+void hobjSet (Object *o, KeyValue *new_kv) {
+    KeyValue* kv = NULL;
+    for(int i = 0; i < o->count; i++) {
+        if(!strcmp(o->items[i].key, new_kv->key))
+            kv = &o->items[i];
+    }
+    if(kv == NULL) return;
+    *kv = *new_kv;
+    free((char*)new_kv->key);
+    if (new_kv->type == TYPE_STRING)
+        free(new_kv->value.s_val);
+    if (new_kv->type == TYPE_OBJECT)
+        hobjFreeAll(new_kv->value.o_val);
+}
+
 void hobjFreeAll(Object *o) {
     for(int i = 0; i < o->count; i++) {
         KeyValue* kv = &o->items[i];
