@@ -17,7 +17,6 @@ Object* hobjNew(size_t count, ...) {
             KeyValue *kv = va_arg(valist, KeyValue*);
             if(kv == NULL) break;
             o->items[i] = *kv;
-            free(kv);
         }
         va_end(valist);
         return o;
@@ -121,19 +120,15 @@ void _hobjDeepCopy(KeyValue *kv, KeyValue *new_kv) {
             break;
         case TYPE_OBJECT:
             kv->value.o_val = hobjClone(new_kv->value.o_val);
-            hobjFreeAll(new_kv->value.o_val);
             break;
     }
-    free((char*)new_kv->key);
-    if (new_kv->type == TYPE_STRING)
-        free(new_kv->value.s_val);
-    if (new_kv->type == TYPE_OBJECT)
-        hobjFreeAll(new_kv->value.o_val);
     return;
 }
 
 Object *hobjClone (Object *o) {
-    Object *no = hobjNew(o->count, NULL);
+    Object *no = hobjNew(0);
+    no->count = o->count;
+    no->items = malloc(o->count * sizeof(KeyValue));
     for(int i = 0; i < o->count; i++) {
         _hobjDeepCopy(&no->items[i], &o->items[i]);
     }
@@ -192,9 +187,8 @@ void hobjFree(Object *o, const char* key) {
 
 void hobjAppend(Object *o, KeyValue *kv) {
     o->items = realloc(o->items, (o->count + 1) * sizeof(KeyValue));
-    o->items[o->count] = *kv;   // write at the old count
+    _hobjDeepCopy(&o->items[o->count], kv);
     o->count++;
-    free(kv);
 }
 
 void hobjPrint(Object *o, const char* linePrefix) {
