@@ -6,7 +6,7 @@
 #include "hobj.h"
 
 #define SET_FLAG(f)     (flags |=  (1 << (f)))
-#define CLR_FLAGS()     (flags ^= flags)
+#define CLR_FLAGS()     (flags = 0)
 #define HAS_FLAG(f)     (flags &   (1 << (f)))
 
 void yyerror(const char* s);
@@ -187,7 +187,7 @@ body_line:
             }
 
             /* now append this completed object into o_data */
-            hobjAppend(o_data, hobjVal(TYPE_OBJECT, s_time, o_tmp));
+            hobjAppend(o_data, hobjVal(TYPE_OBJECT, s_time, hobjClone(o_tmp)));
 
             hobjFreeAll(o_tmp);
             o_tmp = hobjNew(0);
@@ -296,7 +296,7 @@ scope_type:
     | S_FORK
 ;
 %%
-void main(void) {
+int main(void) {
     o_vars = hobjNew(0);
     o_data = hobjNew(0);
     o_tmp = hobjNew(0);

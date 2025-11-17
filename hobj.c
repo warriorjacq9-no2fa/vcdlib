@@ -67,6 +67,8 @@ KeyValue* hobjVal(ValueType t, const char* key, void* val) {
             return _hobjVal__s(key, (char *)val);
         case TYPE_OBJECT:
             return _hobjVal__o(key, (Object *)val);
+        default:
+            return NULL;
     }
 }
 
@@ -98,6 +100,8 @@ void* hobjGet (Object *o, const char* key) {
             return kv->value.s_val;
         case TYPE_OBJECT:
             return kv->value.o_val;
+        default:
+            return NULL;
     }
 }
 
@@ -136,7 +140,6 @@ Object *hobjClone (Object *o) {
     return no;
 }
 
-// TODO: VITAL:  Implement hobjClone
 void hobjSet (Object *o, KeyValue *new_kv) {
     KeyValue* kv = NULL;
     for(int i = 0; i < o->count; i++) {
@@ -167,6 +170,8 @@ void hobjFreeAll(Object *o) {
         if (kv->type == TYPE_OBJECT)
             hobjFreeAll(kv->value.o_val);
     }
+    free(o->items);
+    free(o);
 }
 
 void hobjFree(Object *o, const char* key) {
@@ -213,7 +218,7 @@ void hobjPrint(Object *o, const char* linePrefix) {
                 vals[i] = strdup(kv->value.s_val);
                 break;
             case TYPE_OBJECT:
-                char *pre = malloc(strlen(linePrefix) + 1);
+                char *pre = malloc(strlen(linePrefix) + 3);
                 strcpy(pre, linePrefix);
                 strcat(pre, "  ");
                 vals[i] = NULL;
