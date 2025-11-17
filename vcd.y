@@ -186,7 +186,6 @@ body_line:
                 }
             }
 
-            hobjPrint(o_tmp, "");
             /* now append this completed object into o_data */
             hobjAppend(o_data, hobjVal(TYPE_OBJECT, s_time, o_tmp));
 
@@ -302,6 +301,10 @@ void main(void) {
     o_data = hobjNew(0);
     o_tmp = hobjNew(0);
     yyparse();
+    printf("Variables: ");
+    hobjPrint(o_vars, "");
+    printf("Data: ");
+    hobjPrint(o_data, "");
 }
 void yyerror(const char* s) {
     fprintf(stderr, "Error: %s on line %d\n", s, yylineno);
