@@ -36,4 +36,5 @@ void hobjFreeAll(Object *o);
 void hobjFree(Object *o, const char* key);
 void hobjAppend(Object *o, KeyValue *kv);
 void hobjPrint(Object *o, const char* linePrefix);
+Object *hobjClone (Object *o);
 #endif

@@ -15,6 +15,7 @@ Object* hobjNew(size_t count, ...) {
         va_start(valist, count);
         for(int i = 0; i < count; i++) {
             KeyValue *kv = va_arg(valist, KeyValue*);
+            if(kv == NULL) break;
             o->items[i] = *kv;
             free(kv);
         }
@@ -100,6 +101,46 @@ void* hobjGet (Object *o, const char* key) {
             return kv->value.o_val;
     }
 }
+
+void _hobjDeepCopy(KeyValue *kv, KeyValue *new_kv) {
+    if(new_kv == NULL) return;
+    if(kv == NULL) return;
+
+    // Deep copy the new one
+    kv->key = strdup(new_kv->key);
+    kv->type = new_kv->type;
+    switch(new_kv->type) {
+        case TYPE_INT:
+            kv->value.i_val = new_kv->value.i_val;
+            break;
+        case TYPE_DOUBLE:
+            kv->value.d_val = new_kv->value.d_val;
+            break;
+        case TYPE_STRING:
+            kv->value.s_val = strdup(new_kv->value.s_val);
+            break;
+        case TYPE_OBJECT:
+            kv->value.o_val = hobjClone(new_kv->value.o_val);
+            hobjFreeAll(new_kv->value.o_val);
+            break;
+    }
+    free((char*)new_kv->key);
+    if (new_kv->type == TYPE_STRING)
+        free(new_kv->value.s_val);
+    if (new_kv->type == TYPE_OBJECT)
+        hobjFreeAll(new_kv->value.o_val);
+    return;
+}
+
+Object *hobjClone (Object *o) {
+    Object *no = hobjNew(o->count, NULL);
+    for(int i = 0; i < o->count; i++) {
+        _hobjDeepCopy(&no->items[i], &o->items[i]);
+    }
+    no->count = o->count;
+    return no;
+}
+
 // TODO: VITAL:  Implement hobjClone
 void hobjSet (Object *o, KeyValue *new_kv) {
     KeyValue* kv = NULL;
@@ -118,30 +159,9 @@ void hobjSet (Object *o, KeyValue *new_kv) {
     if (kv->type == TYPE_OBJECT)
         hobjFreeAll(kv->value.o_val);
 
-    // Deep copy the new one
-    kv->key = strdup(new_kv->key);
-    kv->type = new_kv->type;
-    switch(new_kv->type) {
-        case TYPE_INT:
-            kv->value.i_val = new_kv->value.i_val;
-            break;
-        case TYPE_DOUBLE:
-            kv->value.d_val = new_kv->value.d_val;
-            break;
-        case TYPE_STRING:
-            kv->value.s_val = strdup(new_kv->value.s_val);
-            break;
-        case TYPE_OBJECT:
-            kv->value.o_val = hobjClone(new_kv->value.o_val);
-            break;
-    }
+    _hobjDeepCopy(kv, new_kv);
 
-    printf("Set %s: %s\n", new_kv->key, new_kv->value.s_val);
-    free((char*)new_kv->key);
-    if (new_kv->type == TYPE_STRING)
-        free(new_kv->value.s_val);
-    if (new_kv->type == TYPE_OBJECT)
-        hobjFreeAll(new_kv->value.o_val);
+    printf("Set %s: %s\n", kv->key, kv->value.s_val);
 }
 
 void hobjFreeAll(Object *o) {
