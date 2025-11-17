@@ -21,6 +21,7 @@ Object* o_data;
 
 Object* o_tmp;
 int ctime = 0;
+int cindex = 0;
 /* Bit  Flag
  * 0    Inside dumpon   (1)
  * 1    Inside dumpoff  (2)
@@ -145,17 +146,54 @@ body_line:
       TOK_BODYCOMMENT TOK_END
     | val_change
     | TOK_TIME {
-        if($1 != ctime) {
-            printf("|    %d: ", ctime);
-            hobjPrint(o_tmp, "|    ");
-            char* s_time = malloc(19 * sizeof(char));
-            snprintf(s_time, 19 * sizeof(char), "%d", ctime);
-            hobjAppend(o_data,
-                hobjVal(TYPE_OBJECT, s_time, o_tmp)
-            );
+        if ($1 != ctime) {
+
+            /* convert ctime to string for the new timestamp key */
+            char s_time[32];
+            snprintf(s_time, sizeof(s_time), "%d", ctime);
+
+            /* For each var that is missing in o_tmp, look up the most recent timestamp
+            in o_data that contains that var */
+            for (int i = 0; i < o_vars->count; i++) {
+
+                /* if the current o_tmp does not have this variable */
+                if (hobjGet(o_tmp, o_vars->items[i].key) == NULL) {
+
+                    const char *var_key = o_vars->items[i].key;
+                    char *val = NULL;
+
+                    /* search backwards through o_data for the most recent timestamp
+                    whose object contains this key */
+                    for (int k = o_data->count - 1; k >= 0; k--) {
+
+                        Object *prev_obj = hobjGet(o_data, o_data->items[k].key);
+                        if (prev_obj == NULL)
+                            continue;
+
+                        val = hobjGet(prev_obj, var_key);
+                        if (val != NULL)
+                            break;  // found the most recent value
+                    }
+
+                    if (val != NULL) {
+                        //printf("%s not present, using %s\n", var_key, val);
+                        hobjAppend(o_tmp,
+                            hobjVal(TYPE_STRING, var_key, val)
+                        );
+                    } else {
+                        printf("%s not present and no previous value found\n", var_key);
+                    }
+                }
+            }
+
+            hobjPrint(o_tmp, "");
+            /* now append this completed object into o_data */
+            hobjAppend(o_data, hobjVal(TYPE_OBJECT, s_time, o_tmp));
+
             hobjFreeAll(o_tmp);
             o_tmp = hobjNew(0);
             ctime = $1;
+            cindex++;
         }
     }
     | TOK_DUMPON {

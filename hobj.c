@@ -155,8 +155,6 @@ void hobjSet (Object *o, KeyValue *new_kv) {
         hobjFreeAll(kv->value.o_val);
 
     _hobjDeepCopy(kv, new_kv);
-
-    printf("Set %s: %s\n", kv->key, kv->value.s_val);
 }
 
 void hobjFreeAll(Object *o) {
